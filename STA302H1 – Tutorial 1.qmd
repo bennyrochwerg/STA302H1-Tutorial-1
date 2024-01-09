@@ -1,0 +1,168 @@
+---
+title: "Analyzing the Results of the 2021 Canadian Federal Election"
+author: "Benny Rochwerg"
+format: pdf
+---
+
+# GitHub Repository Link
+
+<https://github.com/bennyrochwerg/STA302H1-Tutorial-1.git>
+
+This GitHub Repository contains Figures and R code used to generate this report.
+
+# Dataset Sketch
+
+A sketch of the necessary dataset (Figure 1) is shown in `Figure 1.JPG` on the GitHub repository.
+
+# Graph Sketch
+
+A sketch of a pertinent graph (Figure 2) is shown in `Figure 2.JPG` on the GitHub repository.
+
+# Preamble Documentation
+
+```{r}
+#### Preamble ####
+
+# Purpose: Use 2021 Canadian Federal Election outcome data
+# to generate a graph displaying the total number of ridings
+# held by different political parties.
+# Author: Benny Rochwerg
+# Email: benny.rochwerg@mail.utoronto.ca
+# Date: January 9, 2024
+# Prerequisites: Access to data containing the results of the
+# 2021 Canadian Federal Election.
+```
+
+```{r}
+#| echo: false
+#### Loading Packages ####
+
+# install.packages("janitor")
+# install.packages("tidyverse")
+# install.packages("knitr")
+```
+
+```{r}
+#| echo: false
+#| warning: false
+library(janitor)
+library(tidyverse)
+library(knitr)
+```
+
+# Data Simulation
+
+```{r}
+#| echo: false
+#### Data Simulation ####
+
+set.seed(100)
+
+data_simulation <- tibble("Riding" = 1:338,
+                          "Party" = sample(
+                            x = c("Liberal", "Conservative", "Bloc Québécois", "New Democratic", "Green", "Other"),
+                            size = 338,
+                            replace = TRUE)
+                          )
+
+# This code was adapted from STA304H1.
+head(data_simulation) |>
+  kable(caption = "Partial Simulated Results of the 2021 Canadian Federal Election")
+```
+
+```{r}
+#| echo: false
+#### Elections Canada Data Cleaning ####
+
+# Obtaining the raw data from Elections Canada
+federal_election_data_initial <- read_csv(file = "https://www.elections.ca/res/rep/off/ovr2021app/53/data_donnees/table_tableau11.csv",
+                                          show_col_types = FALSE)
+
+# Cleaning the column names
+federal_election_data_cleaned <- clean_names(federal_election_data_initial)
+
+# Selecting the two relevant columns
+federal_election_data_cleaned <- federal_election_data_cleaned |>
+  select(electoral_district_name_nom_de_circonscription,
+         elected_candidate_candidat_elu)
+
+# Renaming the columns
+federal_election_data_cleaned <- federal_election_data_cleaned |>
+  rename(riding = electoral_district_name_nom_de_circonscription,
+         elected_candidate = elected_candidate_candidat_elu)
+
+# Isolating the political party of each elected candidate
+federal_election_data_cleaned <- federal_election_data_cleaned |>
+  separate(col = elected_candidate,
+           into = c("Other", "party"),
+           sep = "/") |>
+  select(-Other)
+
+# Translating the names of the political parties into English
+federal_election_data_cleaned <- federal_election_data_cleaned |>
+  mutate(party = case_match(party,
+                            "Libéral" ~ "Liberal",
+                            "Conservateur" ~ "Conservative",
+                            "Bloc Québécois" ~ "Bloc Québécois",
+                            "NPD-Nouveau Parti démocratique" ~ "New Democratic",
+                            "Parti Vert" ~ "Green",
+                            ))
+```
+
+# Election Results
+
+```{r}
+#| echo: false
+#### Creating a Table and a Graph ####
+
+# Obtaining the number of ridings that each party won
+# This code was adapted from STA304H1.
+federal_election_data_cleaned |>
+  count(party) |>
+  rename(`Party` = party,
+         `Number of ridings` = n) |>
+  kable(caption = "Number of Ridings Won by Each Party in the 2021 Canadian Federal Election")
+
+# Creating a bar graph to display the number of ridings that each party won
+federal_election_data_cleaned |>
+  ggplot(aes(x = party)) +
+  geom_bar() +
+  theme_bw() +
+  labs(x = "Party", y = "Number of ridings") +
+  ggtitle("Figure 3: Results of the 2021 Canadian Federal Election")
+  # The ggtitle function was found in the Help section of the Workspace
+```
+
+# Discussion
+
+Canada's lower house, the House of Commons, consists of 338 seats represented by several political parties (Alexander 2023). The Liberal and Conservative parties are the main parties, while the Bloc Québécois, New Democratic, and Green parties are minor parties (Alexander 2023). On September 20, 2021, a federal election was held in Canada (Aiello 2021); the outcome of this election was examined in this report.
+
+The results of this election were obtained from Elections Canada (Elections Canada). Next, the resulting data was cleaned by employing the R programming language (R Core Team 2023) and the packages `janitor` (Firke 2023), `tidyverse` (Wickham et al. 2019), and `knitr` (Xie 2023).
+
+Table 2 and Figure 3 depict the results of the 2021 Canadian Federal Election in tabular and graphical form, respectively. The Liberal party secured 160 seats, followed by the Conservative party (119 seats), the Bloc Québécois party (32 seats), the New Democratic party (25 seats), and the Green party (2 seats).
+
+The results of the 2021 Canadian Federal Election closely matched those of the 2019 election (Kestler-D'Amours 2021). This suggests that voters' preferences did not substantially change between the two elections, possibly due to an overall sense of approval of the federal government among the Canadian population (Kestler-D'Amours 2021). However, it was reported that Canadians with disabilities encountered difficulties voting for reasons including inaccessible polling stations (Bernard 2021). This indicates that the election results, and thus the resulting composition of the federal government, were likely not representative of the general population as a whole.
+
+# Acknowledgements
+
+This report was adapted from *Telling Stories with Data* by Rohan Alexander (Alexander 2023).
+
+# References
+
+Aiello, Rachel. 2021. "Trudeau calls federal election, voters to go to the polls Sept. 20." *CTV News*, August. <https://www.ctvnews.ca/politics/federal-election-2021/trudeau-calls-federal-election-voters-to-go-to-the-polls-sept-20-1.5547815>.
+
+Alexander, Rohan. 2023. *Telling Stories with Data*. 1st ed. Boca Raton: CRC Press. <https://tellingstorieswithdata.com/>.
+
+Bernard, Renee. 2021. "Barriers remain for Canadian voters who are disabled: advocates." *CityNews*, September. <https://vancouver.citynews.ca/2021/09/04/barriers-remain-for-disabled-voters-say-two-groups/>.
+
+Elections Canada. <https://www.elections.ca/res/rep/off/ovr2021app/53/data_donnees/table_tableau11.csv>.
+
+Firke, Sam. 2023. *janitor: Simple Tools for Examining and Cleaning Dirty Data.* <https://CRAN.R-project.org/package=janitor>.
+
+Kestler-D'Amours, Jillian. 2021. "'No one really wins': Canada vote results near identical to 2019." *Al Jazeera*, September. <https://www.aljazeera.com/news/2021/9/21/no-one-really-wins-canada-vote-results-near-identical-to-2019>.
+
+R Core Team. 2023. *R: A Language and Environment for Statistical Computing.* Vienna, Austria: R Foundation for Statistical Computing. <https://www.R-project.org/>.
+
+Wickham, Hadley, Mara Averick, Jenny Bryan, Winston Chang, Lucy D’Agostino McGowan, Romain François, Garrett Grolemund, et al. 2019. “Welcome to the Tidyverse.” *Journal of Open Source Software* 4 (43): 1686. <https://doi.org/10.21105/joss.01686>.
+
+Xie, Yihui. 2023. *knitr: A General-Purpose Package for Dynamic Report Generation in R*. <https://yihui.org/knitr/>.
